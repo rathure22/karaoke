@@ -1,0 +1,56 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      # If the 4 signing secrets exist -> signed release APK, otherwise -> debug APK
+      - name: Prepare signing (optional)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > my-release-key.jks
+            printf 'storeFile=my-release-key.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
+            echo "BUILD_TASK=assembleRelease" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_TASK=assembleDebug" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build
+        run: gradle "$BUILD_TASK" --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MyKaraoke-apk
+          path: app/build/outputs/apk/**/*.apk
+
+      # Tag a version (e.g. v1.0) to also get a Releases page with the APK
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/**/*.apk

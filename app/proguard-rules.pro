@@ -1,0 +1,5 @@
+-keepattributes Signature, *Annotation*
+-keep class com.example.mykaraoke.data.** { *; }
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**
