@@ -72,7 +72,7 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
 
             item { SectionHeader("REMOTE CONTROL (phone browser)") }
             item {
-                SettingRow("Enable Remote Server", vm.remoteStatus, onClick = { vm.setRemoteEnabled(!vm.remoteEnabled) }) {
+                SettingRow("Enable Remote Server", vm.remoteStatus, onClick = { vm.updateRemoteEnabled(!vm.remoteEnabled) }) {
                     Switch(checked = vm.remoteEnabled, onCheckedChange = null)
                 }
             }
@@ -83,14 +83,14 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
                 SettingRow(
                     "Selection Dialog in Player",
                     if (vm.pickerDialog) "Enabled: pick songs without leaving the player" else "Disabled: Songs button goes back to the list",
-                    onClick = { vm.setPickerDialog(!vm.pickerDialog) }
+                    onClick = { vm.updatePickerDialog(!vm.pickerDialog) }
                 ) { Switch(checked = vm.pickerDialog, onCheckedChange = null) }
             }
             item {
                 SettingRow(
                     "Hide Player Buttons",
                     if (vm.hidePlayerButtons) "Hidden: use the remote or Back" else "Shown on screen",
-                    onClick = { vm.setHidePlayerButtons(!vm.hidePlayerButtons) }
+                    onClick = { vm.updateHidePlayerButtons(!vm.hidePlayerButtons) }
                 ) { Switch(checked = vm.hidePlayerButtons, onCheckedChange = null) }
             }
 
@@ -119,7 +119,7 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
                 numeric = true,
                 onSave = {
                     val p = it.toIntOrNull()
-                    if (p != null && p in 1024..65535) vm.setRemotePort(p)
+                    if (p != null && p in 1024..65535) vm.updateRemotePort(p)
                     dialog = null
                 },
                 onDismiss = { dialog = null }
@@ -129,7 +129,7 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
                 initial = vm.bgvDir,
                 numeric = false,
                 onSave = {
-                    vm.setBgvDir(it)
+                    vm.updateBgvDir(it)
                     dialog = null
                 },
                 onDismiss = { dialog = null }

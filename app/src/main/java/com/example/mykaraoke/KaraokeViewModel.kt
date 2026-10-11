@@ -187,7 +187,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
 
     // ================= song list =================
 
-    private fun setSongs(list: List<Song>) {
+    private fun updateSongs(list: List<Song>) {
         keys = list.map {
             (it.displayTitle + " " + (it.artist ?: "") + " " + (it.code ?: "")).lowercase()
         }
@@ -269,7 +269,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
                 if (mode == MODE_LOCAL && !hasStorageAccess()) {
                     throw IllegalStateException("File access not granted yet")
                 }
-                setSongs(fetchSongs(mode, base, user, pass, library))
+                updateSongs(fetchSongs(mode, base, user, pass, library))
                 cfgMode = mode; cfgUser = user; cfgPass = pass; cfgLibrary = library
                 serverUrl = base
                 prefs.edit()
@@ -291,7 +291,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
         viewModelScope.launch {
             loading = true; error = null
             try {
-                setSongs(fetchSongs(cfgMode, base, cfgUser, cfgPass, cfgLibrary))
+                updateSongs(fetchSongs(cfgMode, base, cfgUser, cfgPass, cfgLibrary))
             } catch (e: Exception) {
                 error = "Cannot load songs: ${e.message ?: e.javaClass.simpleName}"
             } finally {
@@ -303,7 +303,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     fun changeServer() {
         stopPlayback()
         queue = emptyList()
-        setSongs(emptyList())
+        updateSongs(emptyList())
         serverUrl = ""
         showSettings = false
         error = null
@@ -576,12 +576,12 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
         playFanfare()
     }
 
-    fun setPickerDialog(on: Boolean) {
+    fun updatePickerDialog(on: Boolean) {
         pickerDialog = on
         prefs.edit().putBoolean("pickerDialog", on).apply()
     }
 
-    fun setHidePlayerButtons(on: Boolean) {
+    fun updateHidePlayerButtons(on: Boolean) {
         hidePlayerButtons = on
         prefs.edit().putBoolean("hideButtons", on).apply()
     }
@@ -597,18 +597,18 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
         prefs.edit().putBoolean("bgvChange", on).apply()
     }
 
-    fun setBgvDir(path: String) {
+    fun updateBgvDir(path: String) {
         bgvDir = path.trim()
         prefs.edit().putString("bgvDir", bgvDir).apply()
     }
 
-    fun setRemoteEnabled(on: Boolean) {
+    fun updateRemoteEnabled(on: Boolean) {
         remoteEnabled = on
         prefs.edit().putBoolean("remote", on).apply()
         applyRemote()
     }
 
-    fun setRemotePort(port: Int) {
+    fun updateRemotePort(port: Int) {
         remotePort = port
         prefs.edit().putInt("remotePort", port).apply()
         if (remoteEnabled) applyRemote()
