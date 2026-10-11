@@ -60,6 +60,7 @@ fun SetupScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
         else -> url.isNotBlank()
     }
 
+    NeonBackground {
     Column(
         Modifier.fillMaxSize().systemBarsPadding().verticalScroll(rememberScrollState()).padding(32.dp),
         verticalArrangement = Arrangement.Center
@@ -133,6 +134,7 @@ fun SetupScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
             Spacer(Modifier.height(12.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
         }
+    }
     }
 }
 
