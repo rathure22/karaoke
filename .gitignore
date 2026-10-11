@@ -4,3 +4,6 @@ build/
 .gradle/
 local.properties
 .idea/
+web/node_modules
+web/dist
+app/src/main/assets/web

@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "MyKaraoke",
+      "hasCanvas": false,
+      "bodyTextLen": 785,
+      "bodyTextHash": "f19456c0c948abb2d04976da9f3b579d6338d49f330ec202fccf2336afc3d643",
+      "bodyTextPrefix": "all MyKaraoke v3 v3.0.2 · live booth SCORE 92,450 Now singing Al",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "MyKaraoke",
+      "hasCanvas": false,
+      "bodyTextLen": 270,
+      "bodyTextHash": "667f62c205fae521dc338f0c84b8cad136ff4906ad8853fc353f412f4f6d6926",
+      "bodyTextPrefix": "all MyKaraoke v3 v3.0.2 · live booth SCORE 92,450 Now singing Al",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}

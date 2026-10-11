@@ -1,30 +1,34 @@
 name: Build APK
-
-on:
-  push:
-    branches: [main, master]
-    tags: ["v*"]
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
+on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build web UI
+        working-directory: web
+        run: |
+          npm install
+          cp vite.config.ts vite.config.apk.ts
+          sed -i 's/command === "build" || isPreview/false/' vite.config.apk.ts
+          sed -i 's/tanstackStart()/tanstackStart({ spa: { enabled: true, prerender: { outputPath: "\/index" } } })/' vite.config.apk.ts
+          node scripts/with-app-env.mjs vite build --config vite.config.apk.ts
+          [ -f dist/client/index.html ] || cp dist/client/_shell.html dist/client/index.html
+          ls -R dist | head -30
+      - name: Copy web into app assets
+        run: |
+          mkdir -p app/src/main/assets/web
+          cp -r web/dist/client/. app/src/main/assets/web/
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-
+          java-version: 17
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
-
-      # If the 4 signing secrets exist -> signed release APK, otherwise -> debug APK
       - name: Prepare signing (optional)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -39,18 +43,9 @@ jobs:
           else
             echo "BUILD_TASK=assembleDebug" >> "$GITHUB_ENV"
           fi
-
       - name: Build
         run: gradle "$BUILD_TASK" --no-daemon
-
       - uses: actions/upload-artifact@v4
         with:
           name: MyKaraoke-apk
           path: app/build/outputs/apk/**/*.apk
-
-      # Tag a version (e.g. v1.0) to also get a Releases page with the APK
-      - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: app/build/outputs/apk/**/*.apk
