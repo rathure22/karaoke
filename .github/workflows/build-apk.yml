@@ -15,7 +15,7 @@ jobs:
           cp vite.config.ts vite.config.apk.ts
           sed -i 's/command === "build" || isPreview/false/' vite.config.apk.ts
           sed -i 's/tanstackStart()/tanstackStart({ spa: { enabled: true, prerender: { outputPath: "\/index" } } })/' vite.config.apk.ts
-          node scripts/with-app-env.mjs vite build --config vite.config.apk.ts
+          PATH="$PWD/node_modules/.bin:$PATH" node scripts/with-app-env.mjs vite build --config vite.config.apk.ts
           [ -f dist/client/index.html ] || cp dist/client/_shell.html dist/client/index.html
           ls -R dist | head -30
       - name: Copy web into app assets
