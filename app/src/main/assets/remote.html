@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MyKaraoke Remote</title>
+<style>
+body{margin:0;font-family:sans-serif;background:#121212;color:#eee}
+header{position:sticky;top:0;background:#4a148c;padding:10px 12px;z-index:5}
+#now{font-weight:bold;margin-bottom:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+button{background:#7b1fa2;color:#fff;border:0;border-radius:8px;padding:9px 12px;margin:2px;font-size:15px}
+button.alt{background:#37474f}
+h3{margin:14px 12px 4px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #2a2a2a}
+.row .t{flex:1;min-width:0;margin-right:8px}
+.row .t b{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.row .t small{color:#aaa}
+#q{width:calc(100% - 24px);margin:10px 12px;padding:10px;font-size:16px;border-radius:8px;border:0}
+</style></head><body>
+<header>
+  <div id="now">Nothing playing</div>
+  <button id="pause">Pause</button>
+  <button id="audio" class="alt" style="display:none"></button>
+  <button id="next" class="alt">Next</button>
+  <button id="stop" class="alt">Stop</button>
+</header>
+<h3 id="qh" style="display:none">Queue</h3>
+<div id="queue"></div>
+<input id="q" type="search" placeholder="Search title, artist or code">
+<div id="songs"></div>
+<script>
+var nowEl=document.getElementById('now'),queueEl=document.getElementById('queue'),qh=document.getElementById('qh'),
+    songsEl=document.getElementById('songs'),q=document.getElementById('q'),
+    pauseBtn=document.getElementById('pause'),audioBtn=document.getElementById('audio'),timer=null;
+function api(p){return fetch('/api/'+p).then(function(r){return r.json();});}
+function mk(tag,text,cls,fn){var e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;if(fn)e.onclick=fn;return e;}
+function act(a,i){api(a+(i!==undefined?'?i='+i:'')).then(render).catch(function(){});}
+function render(s){
+  nowEl.textContent=s.current?s.current:'Nothing playing';
+  pauseBtn.textContent=s.playing?'Pause':'Play';
+  audioBtn.style.display=s.audio?'':'none';
+  audioBtn.textContent=s.audio||'';
+  queueEl.innerHTML='';
+  var qs=s.queue||[];
+  qh.style.display=qs.length?'':'none';
+  qs.forEach(function(t,i){
+    var d=mk('div','','row');
+    d.appendChild(mk('span',(i+1)+'. '+t,'t'));
+    d.appendChild(mk('button','\u2715','alt',function(){act('unqueue',i);}));
+    queueEl.appendChild(d);
+  });
+}
+function loadSongs(){
+  api('songs?limit=100&q='+encodeURIComponent(q.value)).then(function(list){
+    songsEl.innerHTML='';
+    list.forEach(function(s){
+      var d=mk('div','','row'),t=mk('div','','t');
+      t.appendChild(mk('b',s.title));
+      t.appendChild(mk('small',(s.artist?s.artist+' \u2022 ':'')+(s.code?'#'+s.code:'')));
+      d.appendChild(t);
+      d.appendChild(mk('button','Sing','',function(){act('play',s.i);}));
+      d.appendChild(mk('button','+ Queue','alt',function(){act('queue',s.i);}));
+      songsEl.appendChild(d);
+    });
+  }).catch(function(){});
+}
+pauseBtn.onclick=function(){act('pause');};
+audioBtn.onclick=function(){act('audio');};
+document.getElementById('next').onclick=function(){act('next');};
+document.getElementById('stop').onclick=function(){act('stop');};
+q.oninput=function(){clearTimeout(timer);timer=setTimeout(loadSongs,250);};
+function poll(){api('state').then(render).catch(function(){});}
+loadSongs();poll();setInterval(poll,2000);
+</script></body></html>

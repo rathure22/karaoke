@@ -1,14 +1,17 @@
+@file:OptIn(UnstableApi::class)
+
 package com.example.mykaraoke.ui
 
 import android.app.Activity
 import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,28 +27,38 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
+import com.example.mykaraoke.DEFAULT_LOCAL_PATH
 import com.example.mykaraoke.KaraokeViewModel
 import com.example.mykaraoke.MODE_JELLYFIN
+import com.example.mykaraoke.MODE_LOCAL
 import com.example.mykaraoke.MODE_SIMPLE
 import com.example.mykaraoke.data.Song
 
 // ---------------------------------------------------------------- Setup
 
 @Composable
-private fun ModeButton(text: String, selected: Boolean, onClick: () -> Unit) {
-    if (selected) Button(onClick = onClick) { Text(text) }
-    else OutlinedButton(onClick = onClick) { Text(text) }
+private fun ModeButton(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    if (selected) Button(onClick = onClick, modifier = modifier) { Text(text, maxLines = 1) }
+    else OutlinedButton(onClick = onClick, modifier = modifier) { Text(text, maxLines = 1) }
 }
 
 @Composable
-fun SetupScreen(vm: KaraokeViewModel) {
-    var jellyfin by remember { mutableStateOf(false) }
+fun SetupScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
+    var mode by remember { mutableStateOf(MODE_LOCAL) }
     var url by remember { mutableStateOf("") }
+    var path by remember { mutableStateOf(DEFAULT_LOCAL_PATH) }
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var library by remember { mutableStateOf("") }
+
+    val canConnect = !vm.loading && when (mode) {
+        MODE_LOCAL -> path.isNotBlank()
+        MODE_JELLYFIN -> url.isNotBlank() && user.isNotBlank()
+        else -> url.isNotBlank()
+    }
 
     Column(
         Modifier.fillMaxSize().systemBarsPadding().verticalScroll(rememberScrollState()).padding(32.dp),
@@ -54,47 +67,68 @@ fun SetupScreen(vm: KaraokeViewModel) {
         Text("MyKaraoke", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ModeButton("Simple server", !jellyfin) { jellyfin = false }
-            ModeButton("Jellyfin", jellyfin) { jellyfin = true }
+            ModeButton("Local MIDI", mode == MODE_LOCAL, Modifier.weight(1f)) { mode = MODE_LOCAL }
+            ModeButton("Server", mode == MODE_SIMPLE, Modifier.weight(1f)) { mode = MODE_SIMPLE }
+            ModeButton("Jellyfin", mode == MODE_JELLYFIN, Modifier.weight(1f)) { mode = MODE_JELLYFIN }
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            if (jellyfin) "Jellyfin server with your karaoke videos in a Movies or Home Videos library"
-            else "Web server with a catalog.json (see README)",
+            when (mode) {
+                MODE_LOCAL -> "MIDI karaoke files on this device (folder with a songs/ subfolder)"
+                MODE_JELLYFIN -> "Jellyfin server with karaoke videos"
+                else -> "Web server with a catalog.json of karaoke videos (see README)"
+            },
             style = MaterialTheme.typography.bodySmall
         )
         Spacer(Modifier.height(16.dp))
-        OutlinedTextField(
-            value = url, onValueChange = { url = it },
-            label = { Text(if (jellyfin) "Server (e.g. 192.168.1.10:8096)" else "Server (e.g. 192.168.1.10:8080)") },
-            singleLine = true, modifier = Modifier.fillMaxWidth()
-        )
-        if (jellyfin) {
-            Spacer(Modifier.height(8.dp))
+
+        if (mode == MODE_LOCAL) {
             OutlinedTextField(
-                value = user, onValueChange = { user = it },
-                label = { Text("Username") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+                value = path, onValueChange = { path = it },
+                label = { Text("Karaoke folder") },
+                singleLine = true, modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
+            val ok = vm.hasStorageAccess()
+            Text(if (ok) "File access: OK" else "File access: not granted yet")
+            if (!ok) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = onRequestStorage) { Text("Grant file access") }
+                Text("After allowing it, come back and press Connect.", style = MaterialTheme.typography.bodySmall)
+            }
+        } else {
             OutlinedTextField(
-                value = pass, onValueChange = { pass = it },
-                label = { Text("Password") }, singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                value = url, onValueChange = { url = it },
+                label = { Text(if (mode == MODE_JELLYFIN) "Server (e.g. 192.168.1.10:8096)" else "Server (e.g. 192.168.1.10:8080)") },
+                singleLine = true, modifier = Modifier.fillMaxWidth()
             )
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = library, onValueChange = { library = it },
-                label = { Text("Library name (optional)") }, singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (mode == MODE_JELLYFIN) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = user, onValueChange = { user = it },
+                    label = { Text("Username") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = pass, onValueChange = { pass = it },
+                    label = { Text("Password") }, singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = library, onValueChange = { library = it },
+                    label = { Text("Library name (optional)") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
         Spacer(Modifier.height(16.dp))
         Button(
-            onClick = { vm.connect(url, if (jellyfin) MODE_JELLYFIN else MODE_SIMPLE, user, pass, library) },
-            enabled = !vm.loading && url.isNotBlank() && (!jellyfin || user.isNotBlank()),
+            onClick = { vm.connect(if (mode == MODE_LOCAL) path else url, mode, user, pass, library) },
+            enabled = canConnect,
             modifier = Modifier.fillMaxWidth()
-        ) { Text(if (vm.loading) "Connecting..." else "Connect") }
+        ) { Text(if (vm.loading) "Loading..." else "Connect") }
         vm.error?.let {
             Spacer(Modifier.height(12.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
@@ -119,8 +153,7 @@ fun BrowseScreen(vm: KaraokeViewModel) {
                 placeholder = { Text("Search title, artist or code") },
                 singleLine = true, modifier = Modifier.weight(1f)
             )
-            Button(onClick = { vm.load() }) { Text("Refresh") }
-            OutlinedButton(onClick = { vm.changeServer() }) { Text("Server") }
+            Button(onClick = { vm.showSettings = true }) { Text("Settings") }
         }
 
         vm.error?.let {
@@ -156,7 +189,12 @@ fun BrowseScreen(vm: KaraokeViewModel) {
 
             item {
                 Text(
-                    if (!vm.loading && songs.isEmpty()) "No songs found" else "Songs (${songs.size})",
+                    when {
+                        vm.loading && vm.songs.isEmpty() -> "Loading songs..."
+                        songs.isEmpty() -> "No songs found"
+                        songs.size < vm.songs.size -> "Showing ${songs.size} of ${vm.songs.size} (type to search)"
+                        else -> "Songs (${songs.size})"
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(12.dp)
                 )
@@ -169,7 +207,7 @@ fun BrowseScreen(vm: KaraokeViewModel) {
 }
 
 @Composable
-private fun SongRow(vm: KaraokeViewModel, song: Song) {
+fun SongRow(vm: KaraokeViewModel, song: Song) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -214,9 +252,13 @@ private fun NowPlayingBar(vm: KaraokeViewModel) {
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { vm.showPlayer = true }) { Text("Video") }
-                if (vm.audioCount >= 2) {
+            Row(
+                Modifier.horizontalScrollCompat(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(onClick = { vm.showPlayer = true }) { Text(if (vm.isMidi) "Lyrics" else "Video") }
+                OutlinedButton(onClick = { vm.togglePause() }) { Text(if (vm.playingNow) "Pause" else "Play") }
+                if (!vm.isMidi && vm.audioCount >= 2) {
                     OutlinedButton(onClick = { vm.toggleAudio() }) { Text(vm.audioLabel) }
                 }
                 OutlinedButton(onClick = { vm.playNext() }) { Text("Next") }
@@ -226,14 +268,15 @@ private fun NowPlayingBar(vm: KaraokeViewModel) {
     }
 }
 
-// ---------------------------------------------------------------- Player
-
 @Composable
-fun PlayerScreen(vm: KaraokeViewModel) {
-    // Back returns to the song list; the song keeps playing (use "Video" to return)
-    BackHandler { vm.showPlayer = false }
+private fun Modifier.horizontalScrollCompat(): Modifier =
+    this.horizontalScroll(rememberScrollState())
 
-    // Fullscreen: hide system bars while the video is shown
+// ---------------------------------------------------------------- Player (video)
+
+/** Hide system bars while a full-screen player is shown. */
+@Composable
+fun FullscreenEffect() {
     val view = LocalView.current
     DisposableEffect(Unit) {
         val window = (view.context as? Activity)?.window
@@ -243,6 +286,13 @@ fun PlayerScreen(vm: KaraokeViewModel) {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         onDispose { controller?.show(WindowInsetsCompat.Type.systemBars()) }
     }
+}
+
+@Composable
+fun PlayerScreen(vm: KaraokeViewModel) {
+    // Back returns to the song list; the song keeps playing (use "Video" to return)
+    BackHandler { vm.showPlayer = false }
+    FullscreenEffect()
 
     var controlsVisible by remember { mutableStateOf(true) }
 
@@ -266,7 +316,7 @@ fun PlayerScreen(vm: KaraokeViewModel) {
             onRelease = { it.player = null }
         )
 
-        if (controlsVisible) {
+        if (controlsVisible && !vm.hidePlayerButtons) {
             Row(
                 Modifier.align(Alignment.TopStart).fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -292,7 +342,9 @@ fun PlayerScreen(vm: KaraokeViewModel) {
                     Button(onClick = { vm.toggleAudio() }) { Text(vm.audioLabel) }
                 }
                 OutlinedButton(onClick = { vm.playNext() }) { Text("Next") }
-                OutlinedButton(onClick = { vm.showPlayer = false }) { Text("Songs") }
+                OutlinedButton(onClick = {
+                    if (vm.pickerDialog) vm.showPicker = true else vm.showPlayer = false
+                }) { Text("Songs") }
             }
         }
     }

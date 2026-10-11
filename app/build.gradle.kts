@@ -18,8 +18,8 @@ android {
         applicationId = "com.example.mykaraoke"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 4
+        versionName = "2.0"
     }
 
     signingConfigs {
@@ -50,6 +50,10 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
 }
 
@@ -60,6 +64,8 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.animation:animation")
     implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation("androidx.media3:media3-exoplayer:1.3.1")

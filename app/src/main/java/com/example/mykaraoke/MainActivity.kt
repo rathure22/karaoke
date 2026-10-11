@@ -1,10 +1,17 @@
 package com.example.mykaraoke
 
+import android.Manifest
+import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,11 +23,40 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.example.mykaraoke.ui.BrowseScreen
+import com.example.mykaraoke.ui.MidiStage
 import com.example.mykaraoke.ui.PlayerScreen
+import com.example.mykaraoke.ui.ScoreOverlay
+import com.example.mykaraoke.ui.SettingsScreen
 import com.example.mykaraoke.ui.SetupScreen
+import com.example.mykaraoke.ui.SongPickerDialog
 
 class MainActivity : ComponentActivity() {
     private val vm: KaraokeViewModel by viewModels()
+
+    private val storageLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private fun requestStorage() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            try {
+                startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    )
+                )
+            } catch (e: Exception) {
+                try {
+                    startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                } catch (e2: Exception) {
+                    vm.error = "This device has no 'All files access' screen. Use adb: " +
+                        "adb shell appops set $packageName MANAGE_EXTERNAL_STORAGE allow"
+                }
+            }
+        } else {
+            storageLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,10 +73,16 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(LocalDensity provides effective) {
                 MaterialTheme(colorScheme = darkColorScheme()) {
                     Surface(Modifier.fillMaxSize()) {
-                        when {
-                            vm.serverUrl.isBlank() -> SetupScreen(vm)
-                            vm.current != null && vm.showPlayer -> PlayerScreen(vm)
-                            else -> BrowseScreen(vm)
+                        Box(Modifier.fillMaxSize()) {
+                            when {
+                                vm.serverUrl.isBlank() -> SetupScreen(vm) { requestStorage() }
+                                vm.showSettings -> SettingsScreen(vm) { requestStorage() }
+                                vm.current != null && vm.showPlayer ->
+                                    if (vm.isMidi) MidiStage(vm) else PlayerScreen(vm)
+                                else -> BrowseScreen(vm)
+                            }
+                            if (vm.showPicker && vm.current != null) SongPickerDialog(vm)
+                            vm.score?.let { ScoreOverlay(vm, it) }
                         }
                     }
                 }
