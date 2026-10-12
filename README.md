@@ -34,3 +34,4 @@ Debug builds from GitHub have a different signature each time: uninstall the old
 
 ## Icon
 Adaptive icon (`mipmap-anydpi-v26`) + PNG fallbacks; TV banner `drawable-xhdpi/banner.png`.
+test CodeRabbit
