@@ -6,9 +6,9 @@ import android.os.Handler
 import android.os.Looper
 // NOTE: if the build says "Unresolved reference: kotlinds", the package name of
 // fluidsynth-kmp is different. Fix these 3 imports only (everything else stays the same).
-import dev.kotlinds.fluidsynth.AudioConfig
-import dev.kotlinds.fluidsynth.Interpolation
-import dev.kotlinds.fluidsynth.MidiFilePlayer
+import dev.kotlinds.fluidsynthkmp.AudioConfig
+import dev.kotlinds.fluidsynthkmp.Interpolation
+import dev.kotlinds.fluidsynthkmp.MidiFilePlayer
 import java.io.File
 
 /**

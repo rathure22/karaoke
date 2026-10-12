@@ -15,7 +15,7 @@
         android:theme="@style/Theme.MyKaraoke"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".WebActivity"
+            android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
@@ -23,17 +23,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".MainActivity"
-            android:label="MyKaraoke Server"
-            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
-            android:exported="true"
-            android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
