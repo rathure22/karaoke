@@ -10,6 +10,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mykaraoke.KaraokeViewModel
+import com.example.mykaraoke.data.CountdownStyle
+import com.example.mykaraoke.data.LyricAlign
+import com.example.mykaraoke.data.LyricAnim
 
 @Composable
 private fun SectionHeader(text: String) {
@@ -53,6 +56,55 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
                     Text("Settings", style = MaterialTheme.typography.headlineMedium)
                 }
             }
+
+            item { SectionHeader("LYRICS") }
+            item { SettingRow("Lyric Alignment", "Style: ${vm.lyricAlign.label}", onClick = { dialog = "lalign" }) }
+            item { SettingRow("Lyric Animation", "Style: ${vm.lyricAnim.label}", onClick = { dialog = "lanim" }) }
+            item { SettingRow("Countdown Style", "Style: ${vm.countdownStyle.label}", onClick = { dialog = "lcount" }) }
+            item { SettingRow("Highlight Color", "Current: ${hexOf(vm.lyricColor)}", onClick = { dialog = "lcolor" }) }
+            item {
+                SettingRow(
+                    "Random Lyric Color",
+                    "Randomized highlight color per song",
+                    onClick = { vm.updateLyricRandomColor(!vm.lyricRandomColor) }
+                ) { Switch(checked = vm.lyricRandomColor, onCheckedChange = null) }
+            }
+            item {
+                SettingRow(
+                    "Outline Thickness",
+                    "Current: ${String.format("%.1f", vm.lyricOutline)}",
+                    onClick = { dialog = "loutline" }
+                )
+            }
+            item {
+                SettingRow(
+                    "Lyric Font Size",
+                    "Portrait: ${vm.lyricSizePortrait} / Landscape: ${vm.lyricSizeLandscape}",
+                    onClick = { dialog = "lsize" }
+                )
+            }
+            item {
+                SettingRow(
+                    "Lyric Shadow",
+                    "Drop shadow for better legibility",
+                    onClick = { vm.updateLyricShadow(!vm.lyricShadow) }
+                ) { Switch(checked = vm.lyricShadow, onCheckedChange = null) }
+            }
+            item {
+                SettingRow(
+                    "4 Line Display (Portrait)",
+                    "Show 4 lyric lines in portrait mode",
+                    onClick = { vm.updateLyricFourLines(!vm.lyricFourLines) }
+                ) { Switch(checked = vm.lyricFourLines, onCheckedChange = null) }
+            }
+            item {
+                SettingRow(
+                    "Randomize Intro Title Style",
+                    "Randomize song intro title colors and fonts",
+                    onClick = { vm.updateIntroRandom(!vm.introRandom) }
+                ) { Switch(checked = vm.introRandom, onCheckedChange = null) }
+            }
+            item { SettingRow("Lyric Font", lyricFontLabel(vm.lyricFontKey), onClick = { dialog = "lfont" }) }
 
             item { SectionHeader("CONTENT") }
             item {
@@ -130,6 +182,52 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
             "font" -> FontPickerDialog(
                 current = vm.fontKey,
                 onPick = { vm.updateFont(it) },
+                onDismiss = { dialog = null }
+            )
+            "lalign" -> ChoiceDialog(
+                title = "Lyric alignment",
+                options = LyricAlign.values().toList(),
+                label = { it.label },
+                selected = vm.lyricAlign,
+                onPick = { vm.updateLyricAlign(it) },
+                onDismiss = { dialog = null }
+            )
+            "lanim" -> ChoiceDialog(
+                title = "Lyric animation",
+                options = LyricAnim.values().toList(),
+                label = { it.label },
+                selected = vm.lyricAnim,
+                onPick = { vm.updateLyricAnim(it) },
+                onDismiss = { dialog = null }
+            )
+            "lcount" -> ChoiceDialog(
+                title = "Countdown style",
+                options = CountdownStyle.values().toList(),
+                label = { it.label },
+                selected = vm.countdownStyle,
+                onPick = { vm.updateCountdownStyle(it) },
+                onDismiss = { dialog = null }
+            )
+            "lcolor" -> ColorPickerDialog(
+                current = vm.lyricColor,
+                onPick = { vm.updateLyricColor(it) },
+                onDismiss = { dialog = null }
+            )
+            "loutline" -> OutlineDialog(
+                current = vm.lyricOutline,
+                onSave = { vm.updateLyricOutline(it) },
+                onDismiss = { dialog = null }
+            )
+            "lsize" -> LyricSizeDialog(
+                portrait = vm.lyricSizePortrait,
+                landscape = vm.lyricSizeLandscape,
+                onSave = { p, l -> vm.updateLyricSizes(p, l) },
+                onDismiss = { dialog = null }
+            )
+            "lfont" -> LyricFontPickerDialog(
+                current = vm.lyricFontKey,
+                appKey = vm.fontKey,
+                onPick = { vm.updateLyricFont(it) },
                 onDismiss = { dialog = null }
             )
             "port" -> TextInputDialog(

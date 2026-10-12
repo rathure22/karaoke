@@ -29,6 +29,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.mykaraoke.data.BgvMode
 import com.example.mykaraoke.data.Catalog
+import com.example.mykaraoke.data.CountdownStyle
+import com.example.mykaraoke.data.DEFAULT_LYRIC_COLOR
+import com.example.mykaraoke.data.LyricAlign
+import com.example.mykaraoke.data.LyricAnim
 import com.example.mykaraoke.data.Difficulty
 import com.example.mykaraoke.data.Fanfare
 import com.example.mykaraoke.data.JellyfinClient
@@ -153,6 +157,21 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     var bgvChangeEverySong by mutableStateOf(prefs.getBoolean("bgvChange", false)); private set
     var bgvDir by mutableStateOf(prefs.getString("bgvDir", "") ?: ""); private set
     var fontKey by mutableStateOf(prefs.getString("font", "default") ?: "default"); private set
+
+    // lyrics look & feel
+    var lyricAlign by mutableStateOf(loadEnum("lyricAlign", LyricAlign.CENTER)); private set
+    var lyricAnim by mutableStateOf(loadEnum("lyricAnim", LyricAnim.NONE)); private set
+    var countdownStyle by mutableStateOf(loadEnum("countdownStyle", CountdownStyle.TEXT_ANIMATED)); private set
+    var lyricColor by mutableStateOf(prefs.getInt("lyricColor", DEFAULT_LYRIC_COLOR)); private set
+    var lyricRandomColor by mutableStateOf(prefs.getBoolean("lyricRandomColor", false)); private set
+    var lyricOutline by mutableStateOf(prefs.getFloat("lyricOutline", 6f)); private set
+    var lyricSizePortrait by mutableStateOf(prefs.getInt("lyricSizeP", 42)); private set
+    var lyricSizeLandscape by mutableStateOf(prefs.getInt("lyricSizeL", 63)); private set
+    var lyricShadow by mutableStateOf(prefs.getBoolean("lyricShadow", true)); private set
+    var lyricFourLines by mutableStateOf(prefs.getBoolean("lyricFour", true)); private set
+    var introRandom by mutableStateOf(prefs.getBoolean("introRandom", false)); private set
+    /** "app" = use the same font as the rest of the app. */
+    var lyricFontKey by mutableStateOf(prefs.getString("lyricFont", "app") ?: "app"); private set
     var soundFontEnabled by mutableStateOf(prefs.getBoolean("sfEnabled", true)); private set
     var soundFontPath by mutableStateOf(prefs.getString("sfPath", "") ?: ""); private set
     var remoteEnabled by mutableStateOf(prefs.getBoolean("remote", false)); private set
@@ -629,6 +648,64 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     fun updateFont(key: String) {
         fontKey = key
         prefs.edit().putString("font", key).apply()
+    }
+
+    // ================= lyrics settings =================
+
+    fun updateLyricAlign(v: LyricAlign) {
+        lyricAlign = v
+        prefs.edit().putString("lyricAlign", v.name).apply()
+    }
+
+    fun updateLyricAnim(v: LyricAnim) {
+        lyricAnim = v
+        prefs.edit().putString("lyricAnim", v.name).apply()
+    }
+
+    fun updateCountdownStyle(v: CountdownStyle) {
+        countdownStyle = v
+        prefs.edit().putString("countdownStyle", v.name).apply()
+    }
+
+    fun updateLyricColor(argb: Int) {
+        lyricColor = argb
+        prefs.edit().putInt("lyricColor", argb).apply()
+    }
+
+    fun updateLyricRandomColor(on: Boolean) {
+        lyricRandomColor = on
+        prefs.edit().putBoolean("lyricRandomColor", on).apply()
+    }
+
+    fun updateLyricOutline(v: Float) {
+        lyricOutline = v.coerceIn(0f, 12f)
+        prefs.edit().putFloat("lyricOutline", lyricOutline).apply()
+    }
+
+    fun updateLyricSizes(portrait: Int, landscape: Int) {
+        lyricSizePortrait = portrait.coerceIn(16, 120)
+        lyricSizeLandscape = landscape.coerceIn(16, 160)
+        prefs.edit().putInt("lyricSizeP", lyricSizePortrait).putInt("lyricSizeL", lyricSizeLandscape).apply()
+    }
+
+    fun updateLyricShadow(on: Boolean) {
+        lyricShadow = on
+        prefs.edit().putBoolean("lyricShadow", on).apply()
+    }
+
+    fun updateLyricFourLines(on: Boolean) {
+        lyricFourLines = on
+        prefs.edit().putBoolean("lyricFour", on).apply()
+    }
+
+    fun updateIntroRandom(on: Boolean) {
+        introRandom = on
+        prefs.edit().putBoolean("introRandom", on).apply()
+    }
+
+    fun updateLyricFont(key: String) {
+        lyricFontKey = key
+        prefs.edit().putString("lyricFont", key).apply()
     }
 
     // ================= settings =================
