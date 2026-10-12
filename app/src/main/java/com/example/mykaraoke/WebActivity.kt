@@ -57,7 +57,9 @@ class WebActivity : ComponentActivity() {
             }
             webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(msg: ConsoleMessage): Boolean {
-                    Log.e("MyKaraokeWeb", "${msg.messageLevel()} \( {msg.sourceId()}: \){msg.lineNumber()} ${msg.message()}")
+                    val line = msg.messageLevel().toString() + " " +
+                        msg.sourceId() + ":" + msg.lineNumber() + " " + msg.message()
+                    Log.e("MyKaraokeWeb", line)
                     return true
                 }
             }
@@ -74,23 +76,20 @@ class WebActivity : ComponentActivity() {
                 ) {
                     val desc = error?.description?.toString() ?: "unknown"
                     val url = request?.url?.toString() ?: ""
-                    Log.e("MyKaraokeWeb", "load error: $desc url=$url")
+                    Log.e("MyKaraokeWeb", "load error: " + desc + " url=" + url)
                     if (request?.isForMainFrame == true) {
-                        errorView.text =
-                            "Could not load Grok UI.\n\n$desc\n$url\n\nassets/web/index.html missing?"
+                        errorView.text = "Could not load Grok UI.\n\n" + desc + "\n" + url
                         errorView.visibility = android.view.View.VISIBLE
                     }
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    Log.i("MyKaraokeWeb", "page finished: $url")
-                    view?.evaluateJavascript(
-                        "(function(){return document.body ? document.body.innerText.length : -1;})()"
-                    ) { result ->
-                        Log.i("MyKaraokeWeb", "body text length: $result")
+                    Log.i("MyKaraokeWeb", "page finished: " + url)
+                    val js = "(function(){return document.body?document.body.innerText.length:-1;})()"
+                    view?.evaluateJavascript(js) { result ->
+                        Log.i("MyKaraokeWeb", "body text length: " + result)
                         if (result == "0" || result == "null") {
-                            errorView.text =
-                                "Page loaded but UI empty.\nNeed relative JS paths (base: './')."
+                            errorView.text = "Page loaded but UI empty.\nNeed relative JS paths (base ./)."
                             errorView.visibility = android.view.View.VISIBLE
                         }
                     }
@@ -100,28 +99,49 @@ class WebActivity : ComponentActivity() {
             loadUrl("file:///android_asset/web/index.html")
         }
 
-        root.addView(webView, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ))
-        root.addView(errorView, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ))
+        root.addView(
+            webView,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        root.addView(
+            errorView,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
         setContentView(root)
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack()
-                else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
                 }
             }
-        })
+        )
     }
 
-    override fun onResume() { super.onResume(); webView.onResume() }
-    override fun onPause() { webView.onPause(); super.onPause() }
-    override fun onDestroy() { webView.destroy(); super.onDestroy() }
+    override fun onResume() {
+        super.onResume()
+        webView.onResume()
+    }
+
+    override fun onPause() {
+        webView.onPause()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        webView.destroy()
+        super.onDestroy()
+    }
 }
