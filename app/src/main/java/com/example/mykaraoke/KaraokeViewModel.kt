@@ -144,7 +144,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
             def
         }
 
-    var scoreMode by mutableStateOf(loadEnum("scoreMode", ScoreMode.RANDOM)); private set
+    var scoreMode by mutableStateOf(loadEnum("scoreMode", ScoreMode.OFF)); private set
     var difficulty by mutableStateOf(loadEnum("difficulty", Difficulty.MEDIUM)); private set
     var fanfare by mutableStateOf(loadEnum("fanfare", Fanfare.MID)); private set
     var pickerDialog by mutableStateOf(prefs.getBoolean("pickerDialog", true)); private set
@@ -486,7 +486,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     private fun songEnded() {
         val song = current ?: return
         if (score != null) return
-        if (scoreMode == ScoreMode.RANDOM) showScore(song) else playNext()
+        if (scoreMode == ScoreMode.OFF) showScore(song) else playNext()
     }
 
     private fun midiFailed() {

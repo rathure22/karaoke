@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.Density
 import com.example.mykaraoke.ui.BrowseScreen
 import com.example.mykaraoke.ui.MidiStage
 import com.example.mykaraoke.ui.PlayerScreen
-import com.example.mykaraoke.ui.ScoreOverlay
 import com.example.mykaraoke.ui.SettingsScreen
 import com.example.mykaraoke.ui.SetupScreen
 import com.example.mykaraoke.ui.SongPickerDialog
@@ -82,7 +81,6 @@ class MainActivity : ComponentActivity() {
                                 else -> BrowseScreen(vm)
                             }
                             if (vm.showPicker && vm.current != null) SongPickerDialog(vm)
-                            vm.score?.let { ScoreOverlay(vm, it) }
                         }
                     }
                 }

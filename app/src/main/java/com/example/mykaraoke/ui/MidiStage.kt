@@ -82,7 +82,7 @@ private fun LyricsView(lines: List<LyricLine>, baseMs: Long, title: String, arti
     if (lines.isEmpty()) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
             Text(
-                title, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Bold,
+                title, color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center, style = TextStyle(shadow = Shadow(Color.Black, Offset(3f, 3f), 8f))
             )
             if (artist.isNotBlank()) {
@@ -99,11 +99,11 @@ private fun LyricsView(lines: List<LyricLine>, baseMs: Long, title: String, arti
     }
     val cur = idx.coerceAtLeast(0)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        LyricLineText(lines[cur], if (idx >= 0) baseMs else -1L, SUNG, UNSUNG, 34.sp)
+        LyricLineText(lines[cur], if (idx >= 0) baseMs else -1L, SUNG, UNSUNG, 52.sp)
         Spacer(Modifier.height(18.dp))
         val next = lines.getOrNull(cur + 1)
         if (next != null) {
-            LyricLineText(next, -1L, UNSUNG.copy(alpha = 0.65f), UNSUNG.copy(alpha = 0.65f), 28.sp)
+            LyricLineText(next, -1L, UNSUNG.copy(alpha = 0.65f), UNSUNG.copy(alpha = 0.65f), 36.sp)
         }
     }
 }
