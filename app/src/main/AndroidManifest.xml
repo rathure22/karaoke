@@ -16,10 +16,9 @@
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true">
         <activity
-            android:name=".WebActivity"
+            android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode|screenLayout|smallestScreenSize"
             android:exported="true"
-            android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,10 +27,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
-            android:label="MyKaraoke Server"
-            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
-            android:exported="true"
-            android:windowSoftInputMode="adjustResize" />
+            android:name=".WebActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode" />
     </application>
 </manifest>
