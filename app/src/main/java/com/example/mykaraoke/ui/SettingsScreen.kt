@@ -123,6 +123,7 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
             item { SettingRow("Change Source", vm.serverUrl, onClick = { vm.changeServer() }) }
 
             item { SectionHeader("APPEARANCE") }
+            item { SettingRow("Theme", appThemeLabel(vm.themeKey), onClick = { dialog = "theme" }) }
             item { SettingRow("Font", appFont(vm.fontKey).label, onClick = { dialog = "font" }) }
 
             item { SectionHeader("REMOTE CONTROL (phone browser)") }
@@ -179,6 +180,11 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
         }
 
         when (dialog) {
+            "theme" -> ThemePickerDialog(
+                current = vm.themeKey,
+                onPick = { vm.updateTheme(it) },
+                onDismiss = { dialog = null }
+            )
             "font" -> FontPickerDialog(
                 current = vm.fontKey,
                 onPick = { vm.updateFont(it) },

@@ -28,6 +28,7 @@ import com.example.mykaraoke.ui.PlayerScreen
 import com.example.mykaraoke.ui.SettingsScreen
 import com.example.mykaraoke.ui.SetupScreen
 import com.example.mykaraoke.ui.SongPickerDialog
+import com.example.mykaraoke.ui.appColorScheme
 import com.example.mykaraoke.ui.appTypography
 
 class MainActivity : ComponentActivity() {
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
             val effective = if (isTv) Density(density.density, density.fontScale * 1.3f) else density
 
             CompositionLocalProvider(LocalDensity provides effective) {
-                MaterialTheme(colorScheme = darkColorScheme(), typography = appTypography(vm.fontKey)) {
+                MaterialTheme(colorScheme = appColorScheme(vm.themeKey), typography = appTypography(vm.fontKey)) {
                     Surface(Modifier.fillMaxSize()) {
                         Box(Modifier.fillMaxSize()) {
                             when {
