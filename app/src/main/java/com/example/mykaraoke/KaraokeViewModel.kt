@@ -84,7 +84,11 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
             .build()
     }
 
-    private val midi = MidiEngine(onEnded = { songEnded() }, onFail = { midiFailed() })
+    private val midi = MidiEngine(
+        onEnded = { songEnded() },
+        onFail = { midiFailed() },
+        soundFont = { activeSoundFont() }
+    )
 
     // ---------- saved connection ----------
     private var cfgMode = prefs.getString("mode", MODE_SIMPLE) ?: MODE_SIMPLE
@@ -148,6 +152,8 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     var bgvMode by mutableStateOf(loadEnum("bgvMode", BgvMode.VIDEOS)); private set
     var bgvChangeEverySong by mutableStateOf(prefs.getBoolean("bgvChange", false)); private set
     var bgvDir by mutableStateOf(prefs.getString("bgvDir", "") ?: ""); private set
+    var soundFontEnabled by mutableStateOf(prefs.getBoolean("sfEnabled", true)); private set
+    var soundFontPath by mutableStateOf(prefs.getString("sfPath", "") ?: ""); private set
     var remoteEnabled by mutableStateOf(prefs.getBoolean("remote", false)); private set
     var remotePort by mutableStateOf(prefs.getInt("remotePort", 48080)); private set
     var remoteStatus by mutableStateOf("Off"); private set
@@ -286,6 +292,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     }
 
     fun load() {
+        autoSfScanned = false
         val base = serverUrl
         if (base.isBlank()) return
         viewModelScope.launch {
@@ -553,6 +560,65 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
         } else {
             bgPhotos = files.map { it.absolutePath }.shuffled()
         }
+    }
+
+    // ================= SoundFont (.sf2) =================
+
+    private var autoSf: String? = null
+    private var autoSfScanned = false
+
+    /** Looks for the first .sf2 in the usual folders (non-recursive, so it stays fast). */
+    private fun autoSoundFont(): String? {
+        if (autoSfScanned) return autoSf
+        autoSfScanned = true
+        val dirs = listOf(
+            "$bgvRoot/soundfonts",
+            "$bgvRoot/soundfont",
+            bgvRoot,
+            "/storage/emulated/0/SongHub/soundfonts",
+            "/storage/emulated/0/SongHub",
+            "$DEFAULT_LOCAL_PATH/soundfonts"
+        ).distinct()
+        for (d in dirs) {
+            val hit = try {
+                File(d).listFiles { f -> f.isFile && f.extension.equals("sf2", ignoreCase = true) }
+                    ?.sortedBy { it.name }?.firstOrNull()
+            } catch (e: Exception) {
+                null
+            }
+            if (hit != null) {
+                autoSf = hit.absolutePath
+                return autoSf
+            }
+        }
+        autoSf = null
+        return null
+    }
+
+    /** The .sf2 file the engine should use, or null = Android's built-in synth. */
+    private fun activeSoundFont(): String? {
+        if (!soundFontEnabled) return null
+        if (soundFontPath.isNotBlank()) return soundFontPath.takeIf { File(it).isFile }
+        return autoSoundFont()
+    }
+
+    val soundFontDisplay: String
+        get() = when {
+            !soundFontEnabled -> "Off: using Android's built-in synth"
+            soundFontPath.isNotBlank() ->
+                if (File(soundFontPath).isFile) soundFontPath else "$soundFontPath (file not found: using built-in synth)"
+            else -> autoSoundFont()?.let { "(Auto) $it" } ?: "(Auto) no .sf2 found: using built-in synth"
+        }
+
+    fun updateSoundFontEnabled(on: Boolean) {
+        soundFontEnabled = on
+        prefs.edit().putBoolean("sfEnabled", on).apply()
+    }
+
+    fun updateSoundFontPath(path: String) {
+        soundFontPath = path.trim()
+        autoSfScanned = false
+        prefs.edit().putString("sfPath", soundFontPath).apply()
     }
 
     // ================= settings =================

@@ -99,6 +99,16 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
             item { SettingRow("Scoring Difficulty", "Level: ${vm.difficulty.name}", onClick = { vm.cycleDifficulty() }) }
             item { SettingRow("Fanfare Sound", "Level: ${vm.fanfare.label}", onClick = { vm.cycleFanfare() }) }
 
+            item { SectionHeader("SOUND (MIDI songs)") }
+            item {
+                SettingRow(
+                    "Use SoundFont (.sf2)",
+                    if (vm.soundFontEnabled) "On: FluidSynth plays MIDI with your soundfont" else "Off: Android's thin built-in synth",
+                    onClick = { vm.updateSoundFontEnabled(!vm.soundFontEnabled) }
+                ) { Switch(checked = vm.soundFontEnabled, onCheckedChange = null) }
+            }
+            item { SettingRow("SoundFont File", vm.soundFontDisplay, onClick = { dialog = "sf" }) }
+
             item { SectionHeader("BACKGROUND VISUAL (BGV) - MIDI songs") }
             item { SettingRow("BGV Mode", "Current: ${vm.bgvMode.label}", onClick = { vm.cycleBgvMode() }) }
             item {
@@ -120,6 +130,16 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
                 onSave = {
                     val p = it.toIntOrNull()
                     if (p != null && p in 1024..65535) vm.updateRemotePort(p)
+                    dialog = null
+                },
+                onDismiss = { dialog = null }
+            )
+            "sf" -> TextInputDialog(
+                title = "SoundFont .sf2 path (empty = auto)",
+                initial = vm.soundFontPath,
+                numeric = false,
+                onSave = {
+                    vm.updateSoundFontPath(it)
                     dialog = null
                 },
                 onDismiss = { dialog = null }
