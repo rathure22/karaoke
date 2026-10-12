@@ -70,6 +70,9 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
             }
             item { SettingRow("Change Source", vm.serverUrl, onClick = { vm.changeServer() }) }
 
+            item { SectionHeader("APPEARANCE") }
+            item { SettingRow("Font", appFont(vm.fontKey).label, onClick = { dialog = "font" }) }
+
             item { SectionHeader("REMOTE CONTROL (phone browser)") }
             item {
                 SettingRow("Enable Remote Server", vm.remoteStatus, onClick = { vm.updateRemoteEnabled(!vm.remoteEnabled) }) {
@@ -124,6 +127,11 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
         }
 
         when (dialog) {
+            "font" -> FontPickerDialog(
+                current = vm.fontKey,
+                onPick = { vm.updateFont(it) },
+                onDismiss = { dialog = null }
+            )
             "port" -> TextInputDialog(
                 title = "Server Port (1024-65535)",
                 initial = vm.remotePort.toString(),

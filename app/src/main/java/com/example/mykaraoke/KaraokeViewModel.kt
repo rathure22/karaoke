@@ -152,6 +152,7 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     var bgvMode by mutableStateOf(loadEnum("bgvMode", BgvMode.VIDEOS)); private set
     var bgvChangeEverySong by mutableStateOf(prefs.getBoolean("bgvChange", false)); private set
     var bgvDir by mutableStateOf(prefs.getString("bgvDir", "") ?: ""); private set
+    var fontKey by mutableStateOf(prefs.getString("font", "default") ?: "default"); private set
     var soundFontEnabled by mutableStateOf(prefs.getBoolean("sfEnabled", true)); private set
     var soundFontPath by mutableStateOf(prefs.getString("sfPath", "") ?: ""); private set
     var remoteEnabled by mutableStateOf(prefs.getBoolean("remote", false)); private set
@@ -621,6 +622,13 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
         soundFontPath = path.trim()
         autoSfScanned = false
         prefs.edit().putString("sfPath", soundFontPath).apply()
+    }
+
+    // ================= font =================
+
+    fun updateFont(key: String) {
+        fontKey = key
+        prefs.edit().putString("font", key).apply()
     }
 
     // ================= settings =================
