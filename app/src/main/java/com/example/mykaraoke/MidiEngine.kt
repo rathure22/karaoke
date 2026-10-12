@@ -4,6 +4,9 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 // NOTE: if the build says "Unresolved reference: kotlinds", the package name of
 // fluidsynth-kmp is different. Fix these 3 imports only (everything else stays the same).
 import dev.kotlinds.fluidsynthkmp.AudioConfig
@@ -24,7 +27,17 @@ class MidiEngine(
     private val soundFont: () -> String?
 ) {
 
+    companion object {
+        /** Shown in Settings > SOUND so you can see which synth is really playing. */
+        var status by mutableStateOf("Engine: no MIDI song played yet")
+            private set
+    }
+
     private val main = Handler(Looper.getMainLooper())
+
+    private fun setStatus(msg: String) {
+        main.post { status = msg }
+    }
     private val lock = Any()
 
     @Volatile private var gen = 0
@@ -42,6 +55,7 @@ class MidiEngine(
         val my = ++gen
         val sf = try { soundFont()?.takeIf { File(it).isFile } } catch (e: Exception) { null }
         if (sf == null) {
+            setStatus("Engine: Android built-in synth (no usable .sf2 set or found)")
             startBuiltIn(path, startMs, my)
         } else {
             startFluid(sf, path, startMs, my)
@@ -75,6 +89,7 @@ class MidiEngine(
                         lastMs = 0
                         player.play(completion(my))
                         if (startMs > 0) player.seekTo(map.msToTick(startMs))
+                        setStatus("Engine: FluidSynth OK - " + File(sf).name)
                     } else {
                         try { player.close() } catch (e: Throwable) { }
                     }
@@ -82,6 +97,10 @@ class MidiEngine(
             } catch (e: Throwable) {
                 try { player?.close() } catch (x: Throwable) { }
                 // SF2 failed (bad file / native error): fall back to the built-in synth
+                setStatus(
+                    "Engine: FluidSynth failed (" + e.javaClass.simpleName +
+                        (e.message?.let { ": " + it.take(120) } ?: "") + "). Using built-in synth."
+                )
                 main.post { if (my == gen) startBuiltIn(path, startMs, my) }
             }
         }.start()

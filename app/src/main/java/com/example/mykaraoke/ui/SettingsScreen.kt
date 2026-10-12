@@ -108,6 +108,7 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
                 ) { Switch(checked = vm.soundFontEnabled, onCheckedChange = null) }
             }
             item { SettingRow("SoundFont File", vm.soundFontDisplay, onClick = { dialog = "sf" }) }
+            item { SettingRow("Sound engine status", vm.soundEngineStatus, onClick = { }) }
 
             item { SectionHeader("BACKGROUND VISUAL (BGV) - MIDI songs") }
             item { SettingRow("BGV Mode", "Current: ${vm.bgvMode.label}", onClick = { vm.cycleBgvMode() }) }

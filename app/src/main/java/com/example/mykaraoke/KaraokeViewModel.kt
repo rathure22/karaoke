@@ -602,6 +602,8 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
         return autoSoundFont()
     }
 
+    val soundEngineStatus: String get() = MidiEngine.status
+
     val soundFontDisplay: String
         get() = when {
             !soundFontEnabled -> "Off: using Android's built-in synth"

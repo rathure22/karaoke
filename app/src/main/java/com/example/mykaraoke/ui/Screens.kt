@@ -194,7 +194,7 @@ fun BrowseScreen(vm: KaraokeViewModel) {
                     when {
                         vm.loading && vm.songs.isEmpty() -> "Loading songs..."
                         songs.isEmpty() -> "No songs found"
-                        songs.size < vm.songs.size -> "Showing ${songs.size} of ${vm.songs.size} (type to search)"
+                        songs.size < vm.songs.size -> "Showing first ${songs.size} of ${"%,d".format(vm.songs.size)} songs. Type to search."
                         else -> "Songs (${songs.size})"
                     },
                     style = MaterialTheme.typography.titleMedium,
@@ -224,22 +224,36 @@ fun SongRow(vm: KaraokeViewModel, song: Song) {
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(song.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val sub = listOfNotNull(
-                song.artist?.takeIf { it.isNotBlank() },
-                song.code?.takeIf { it.isNotBlank() }?.let { "#$it" }
-            ).joinToString(" • ")
-            if (sub.isNotEmpty()) {
+            Text(
+                song.displayTitle,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 2, overflow = TextOverflow.Ellipsis
+            )
+            song.artist?.takeIf { it.isNotBlank() }?.let {
                 Text(
-                    sub, style = MaterialTheme.typography.bodySmall,
+                    it, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
+                )
+            }
+            song.code?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    "#$it", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
             }
         }
         Spacer(Modifier.width(8.dp))
-        Button(onClick = { vm.playNow(song) }) { Text("Sing") }
-        Spacer(Modifier.width(8.dp))
-        OutlinedButton(onClick = { vm.enqueue(song) }) { Text("+ Queue") }
+        Button(
+            onClick = { vm.playNow(song) },
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) { Text("Sing") }
+        Spacer(Modifier.width(6.dp))
+        OutlinedButton(
+            onClick = { vm.enqueue(song) },
+            contentPadding = PaddingValues(horizontal = 12.dp)
+        ) { Text("+") }
     }
 }
 
