@@ -16,13 +16,12 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 class WebActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
     private lateinit var errorView: TextView
+    private var server: AssetHttpServer? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +37,17 @@ class WebActivity : ComponentActivity() {
             visibility = android.view.View.GONE
         }
 
+        try {
+            val s = AssetHttpServer(assets, "web")
+            s.start()
+            server = s
+            Log.i(TAG, "local server port=" + s.port)
+        } catch (e: Exception) {
+            Log.e(TAG, "server start failed", e)
+            errorView.text = "Local server failed: " + e.message
+            errorView.visibility = android.view.View.VISIBLE
+        }
+
         webView = WebView(this).apply {
             settings.apply {
                 javaScriptEnabled = true
@@ -48,10 +58,6 @@ class WebActivity : ComponentActivity() {
                 mediaPlaybackRequiresUserGesture = false
                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 cacheMode = WebSettings.LOAD_DEFAULT
-                @Suppress("DEPRECATION")
-                allowFileAccessFromFileURLs = true
-                @Suppress("DEPRECATION")
-                allowUniversalAccessFromFileURLs = true
                 useWideViewPort = true
                 loadWithOverviewMode = true
                 builtInZoomControls = false
@@ -59,9 +65,8 @@ class WebActivity : ComponentActivity() {
             }
             webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(msg: ConsoleMessage): Boolean {
-                    val line = msg.messageLevel().toString() + " " +
-                        msg.sourceId() + ":" + msg.lineNumber() + " " + msg.message()
-                    Log.e("MyKaraokeWeb", line)
+                    Log.e(TAG, msg.messageLevel().toString() + " " +
+                        msg.sourceId() + ":" + msg.lineNumber() + " " + msg.message())
                     return true
                 }
             }
@@ -78,29 +83,22 @@ class WebActivity : ComponentActivity() {
                 ) {
                     val desc = error?.description?.toString() ?: "unknown"
                     val url = request?.url?.toString() ?: ""
-                    Log.e("MyKaraokeWeb", "load error: " + desc + " url=" + url)
+                    Log.e(TAG, "error: " + desc + " " + url)
                     if (request?.isForMainFrame == true) {
-                        errorView.text = "Could not load Grok UI.\n\n" + desc + "\n" + url
+                        errorView.text = "Load error:\n" + desc + "\n" + url
                         errorView.visibility = android.view.View.VISIBLE
                     }
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    Log.i("MyKaraokeWeb", "page finished: " + url)
-                    val js = "(function(){return document.body?document.body.innerText.length:-1;})()"
-                    view?.evaluateJavascript(js) { result ->
-                        Log.i("MyKaraokeWeb", "body text length: " + result)
-                        if (result == "0" || result == "null") {
-                            errorView.text = "Page loaded but UI empty.\nJS failed or paths still absolute."
-                            errorView.visibility = android.view.View.VISIBLE
-                        } else {
-                            errorView.visibility = android.view.View.GONE
-                        }
-                    }
+                    Log.i(TAG, "finished: " + url)
                 }
             }
             setBackgroundColor(Color.parseColor("#07131C"))
-            loadKaraokeUi()
+            val p = server?.port ?: 0
+            if (p > 0) {
+                loadUrl("http://127.0.0.1:" + p + "/")
+            }
         }
 
         root.addView(webView, FrameLayout.LayoutParams(
@@ -124,21 +122,17 @@ class WebActivity : ComponentActivity() {
         })
     }
 
-    private fun WebView.loadKaraokeUi() {
-        val base = "file:///android_asset/web/"
-        try {
-            val html = assets.open("web/index.html").use { stream ->
-                BufferedReader(InputStreamReader(stream, Charsets.UTF_8)).readText()
-            }
-            loadDataWithBaseURL(base, html, "text/html", "UTF-8", base + "index.html")
-            Log.i("MyKaraokeWeb", "loaded loadDataWithBaseURL htmlLen=" + html.length)
-        } catch (e: Exception) {
-            Log.e("MyKaraokeWeb", "assets open failed", e)
-            loadUrl(base + "index.html")
-        }
+    override fun onDestroy() {
+        server?.stop()
+        server = null
+        webView.destroy()
+        super.onDestroy()
     }
 
     override fun onResume() { super.onResume(); webView.onResume() }
     override fun onPause() { webView.onPause(); super.onPause() }
-    override fun onDestroy() { webView.destroy(); super.onDestroy() }
+
+    companion object {
+        private const val TAG = "MyKaraokeWeb"
+    }
 }
