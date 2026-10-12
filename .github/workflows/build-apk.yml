@@ -24,14 +24,35 @@ jobs:
           else
             echo "ERROR: no index.html"; ls -laR dist || true; exit 1
           fi
+          echo "=== BEFORE ==="
           head -40 dist/client/index.html
-          ls -la dist/client/ | head -20
+          find dist/client -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' -o -name '*.json' \) -print0 | \
+            xargs -0 sed -i \
+              -e 's|src="/assets/|src="./assets/|g' \
+              -e 's|href="/assets/|href="./assets/|g' \
+              -e 's|url(/assets/|url(./assets/|g' \
+              -e 's|"/assets/|"./assets/|g' \
+              -e "s|'/assets/|'./assets/|g" \
+              -e 's|`/assets/|`./assets/|g' \
+              -e 's|from "/assets/|from "./assets/|g' \
+              -e 's|import("/assets/|import("./assets/|g'
+          find dist/client -type f \( -name '*.html' -o -name '*.js' \) -print0 | \
+            xargs -0 sed -i \
+              -e 's|src="/_|src="./_|g' \
+              -e 's|href="/_|href="./_|g' \
+              -e 's|"/__grok/|"./__grok/|g'
+          if ! grep -q '<base ' dist/client/index.html; then
+            sed -i 's|<head>|<head><base href="./">|' dist/client/index.html || true
+          fi
+          echo "=== AFTER ==="
+          head -50 dist/client/index.html
+          grep -oE '["'\''](/assets/[^"'\'']+)["'\'']' dist/client/index.html | head -5 || echo "no absolute /assets left"
       - name: Copy web into app assets
         run: |
           mkdir -p app/src/main/assets/web
           cp -r web/dist/client/. app/src/main/assets/web/
-          ls -la app/src/main/assets/web/ | head -20
           test -f app/src/main/assets/web/index.html
+          echo "files: $(find app/src/main/assets/web -type f | wc -l)"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

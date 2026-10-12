@@ -16,6 +16,8 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class WebActivity : ComponentActivity() {
 
@@ -89,59 +91,54 @@ class WebActivity : ComponentActivity() {
                     view?.evaluateJavascript(js) { result ->
                         Log.i("MyKaraokeWeb", "body text length: " + result)
                         if (result == "0" || result == "null") {
-                            errorView.text = "Page loaded but UI empty.\nNeed relative JS paths (base ./)."
+                            errorView.text = "Page loaded but UI empty.\nJS failed or paths still absolute."
                             errorView.visibility = android.view.View.VISIBLE
+                        } else {
+                            errorView.visibility = android.view.View.GONE
                         }
                     }
                 }
             }
             setBackgroundColor(Color.parseColor("#07131C"))
-            loadUrl("file:///android_asset/web/index.html")
+            loadKaraokeUi()
         }
 
-        root.addView(
-            webView,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
-        root.addView(
-            errorView,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
+        root.addView(webView, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
+        root.addView(errorView, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
         setContentView(root)
 
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    if (webView.canGoBack()) {
-                        webView.goBack()
-                    } else {
-                        isEnabled = false
-                        onBackPressedDispatcher.onBackPressed()
-                    }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) webView.goBack()
+                else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
                 }
             }
-        )
+        })
     }
 
-    override fun onResume() {
-        super.onResume()
-        webView.onResume()
+    private fun WebView.loadKaraokeUi() {
+        val base = "file:///android_asset/web/"
+        try {
+            val html = assets.open("web/index.html").use { stream ->
+                BufferedReader(InputStreamReader(stream, Charsets.UTF_8)).readText()
+            }
+            loadDataWithBaseURL(base, html, "text/html", "UTF-8", base + "index.html")
+            Log.i("MyKaraokeWeb", "loaded loadDataWithBaseURL htmlLen=" + html.length)
+        } catch (e: Exception) {
+            Log.e("MyKaraokeWeb", "assets open failed", e)
+            loadUrl(base + "index.html")
+        }
     }
 
-    override fun onPause() {
-        webView.onPause()
-        super.onPause()
-    }
-
-    override fun onDestroy() {
-        webView.destroy()
-        super.onDestroy()
-    }
+    override fun onResume() { super.onResume(); webView.onResume() }
+    override fun onPause() { webView.onPause(); super.onPause() }
+    override fun onDestroy() { webView.destroy(); super.onDestroy() }
 }
