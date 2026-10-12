@@ -15,13 +15,23 @@ jobs:
           cp vite.config.ts vite.config.apk.ts
           sed -i 's/command === "build" || isPreview/false/' vite.config.apk.ts
           sed -i 's/tanstackStart()/tanstackStart({ spa: { enabled: true, prerender: { outputPath: "\/index" } } })/' vite.config.apk.ts
+          sed -i 's/defineConfig(({ command, isPreview }) => ({/defineConfig(({ command, isPreview }) => ({\n  base: ".\/",/' vite.config.apk.ts
           PATH="$PWD/node_modules/.bin:$PATH" node scripts/with-app-env.mjs vite build --config vite.config.apk.ts
-          [ -f dist/client/index.html ] || cp dist/client/_shell.html dist/client/index.html
-          ls -R dist | head -30
+          if [ -f dist/client/index.html ]; then
+            echo "index.html OK"
+          elif [ -f dist/client/_shell.html ]; then
+            cp dist/client/_shell.html dist/client/index.html
+          else
+            echo "ERROR: no index.html"; ls -laR dist || true; exit 1
+          fi
+          head -40 dist/client/index.html
+          ls -la dist/client/ | head -20
       - name: Copy web into app assets
         run: |
           mkdir -p app/src/main/assets/web
           cp -r web/dist/client/. app/src/main/assets/web/
+          ls -la app/src/main/assets/web/ | head -20
+          test -f app/src/main/assets/web/index.html
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
