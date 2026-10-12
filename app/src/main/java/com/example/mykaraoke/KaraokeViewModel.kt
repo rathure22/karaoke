@@ -158,6 +158,8 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     var bgvDir by mutableStateOf(prefs.getString("bgvDir", "") ?: ""); private set
     var fontKey by mutableStateOf(prefs.getString("font", "default") ?: "default"); private set
     var themeKey by mutableStateOf(prefs.getString("theme", "default") ?: "default"); private set
+    /** "auto" = follow the theme. */
+    var iconStyle by mutableStateOf(prefs.getString("iconStyle", "auto") ?: "auto"); private set
 
     // lyrics look & feel
     var lyricAlign by mutableStateOf(loadEnum("lyricAlign", LyricAlign.CENTER)); private set
@@ -645,6 +647,11 @@ class KaraokeViewModel(app: Application) : AndroidViewModel(app), RemoteHost {
     }
 
     // ================= font =================
+
+    fun updateIconStyle(key: String) {
+        iconStyle = key
+        prefs.edit().putString("iconStyle", key).apply()
+    }
 
     fun updateTheme(key: String) {
         themeKey = key

@@ -24,6 +24,21 @@ private fun SectionHeader(text: String) {
     )
 }
 
+/** Which Solar icon goes with which row. Rows without a match keep an empty slot so text lines up. */
+private val ROW_ICONS = mapOf(
+    "Theme" to "palette",
+    "Icon Style" to "settings",
+    "Highlight Color" to "palette",
+    "Outline Thickness" to "tuning-2",
+    "Lyric Font Size" to "tuning-2",
+    "Refresh Songs" to "restart",
+    "Enable Remote Server" to "power",
+    "Hide Player Buttons" to "forbidden-circle",
+    "Score Mode" to "chart-2",
+    "Scoring Difficulty" to "target",
+    "Fanfare Sound" to "rocket"
+)
+
 @Composable
 private fun SettingRow(
     title: String,
@@ -35,6 +50,9 @@ private fun SettingRow(
         Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(Modifier.size(40.dp), contentAlignment = Alignment.CenterStart) {
+            ROW_ICONS[title]?.let { SolarIcon(it) }
+        }
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -48,11 +66,15 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
     BackHandler { vm.showSettings = false }
     var dialog by remember { mutableStateOf<String?>(null) }
 
+    val solarStyle = if (vm.iconStyle == "auto") themeIconStyle(vm.themeKey) else vm.iconStyle
+    CompositionLocalProvider(LocalSolarStyle provides solarStyle) {
     Box(Modifier.fillMaxSize().systemBarsPadding()) {
         LazyColumn(Modifier.fillMaxSize()) {
             item {
                 Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = { vm.showSettings = false }) { Text("← Back") }
+                    SolarIcon("settings", size = 28.dp)
+                    Spacer(Modifier.width(8.dp))
                     Text("Settings", style = MaterialTheme.typography.headlineMedium)
                 }
             }
@@ -124,6 +146,7 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
 
             item { SectionHeader("APPEARANCE") }
             item { SettingRow("Theme", appThemeLabel(vm.themeKey), onClick = { dialog = "theme" }) }
+            item { SettingRow("Icon Style", iconStyleLabel(vm.iconStyle), onClick = { dialog = "icons" }) }
             item { SettingRow("Font", appFont(vm.fontKey).label, onClick = { dialog = "font" }) }
 
             item { SectionHeader("REMOTE CONTROL (phone browser)") }
@@ -180,6 +203,14 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
         }
 
         when (dialog) {
+            "icons" -> ChoiceDialog(
+                title = "Icon style",
+                options = listOf("auto") + ICON_STYLES.map { it.first },
+                label = { iconStyleLabel(it) },
+                selected = vm.iconStyle,
+                onPick = { vm.updateIconStyle(it) },
+                onDismiss = { dialog = null }
+            )
             "theme" -> ThemePickerDialog(
                 current = vm.themeKey,
                 onPick = { vm.updateTheme(it) },
@@ -269,5 +300,6 @@ fun SettingsScreen(vm: KaraokeViewModel, onRequestStorage: () -> Unit) {
             )
             else -> {}
         }
+    }
     }
 }
